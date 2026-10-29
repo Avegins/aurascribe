@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuraScribe — AI Clinical Transcription & SOAP Documentation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <span class="brand-icon">🩺</span>
+                <div class="brand-titles">
+                    <h1>AuraScribe <span class="badge badge-env" style="font-size: 0.7rem; vertical-align: middle;">Clinical</span></h1>
+                    <p class="tagline">Multilingual Clinical Transcription &amp; SOAP Documentation Aid</p>
+                </div>
+            </div>
+            <div class="metadata-pills">
+                <span class="meta-pill">Patient ID: <strong>PX-90482</strong></span>
+                <span class="meta-pill">Consult Date: <strong id="consultDateDisplay">Oct 29, 2026</strong></span>
+                <span class="meta-pill">Language: <strong id="consultLangDisplay">Tagalog / Taglish</strong></span>
+            </div>
+        </div>
+    </header>
+
+    <div class="physician-banner">
+        <div class="banner-content">
+            <span class="banner-icon">⚠️</span>
+            <div class="banner-text">
+                <strong>Mandatory Physician Verification Required:</strong>
+                AuraScribe is a clinical documentation aid and does not autonomously diagnose or prescribe. All transcripts and generated SOAP notes must be verified and signed off by a licensed physician before clinical application.
+            </div>
+        </div>
+    </div>
+
+    <main class="main-container">
+        <!-- Recording & Control Section -->
+        <section class="card recording-card" aria-label="Audio Recording Controls">
+            <h2>Record or Upload Consultation</h2>
+            <p class="section-desc">Record consultation audio via microphone or upload an audio recording in Tagalog, Taglish, or English.</p>
+
+            <div class="controls-row">
+                <div class="mic-controls">
+                    <button id="btnStart" class="btn btn-primary" type="button">
+                        <span class="icon">⏺</span> Start Recording
+                    </button>
+                    <button id="btnStop" class="btn btn-secondary" type="button" disabled>
+                        <span class="icon">⏹</span> Stop &amp; Process
+                    </button>
+                </div>
+
+                <div class="file-controls">
+                    <label for="audioFileInput" class="file-label">Or upload audio file:</label>
+                    <input type="file" id="audioFileInput" accept="audio/*,.webm,.wav,.mp3,.m4a" class="file-input">
+                    <button id="btnUpload" class="btn btn-outline" type="button" disabled>
+                        Upload &amp; Process
+                    </button>
+                </div>
+
+                <div class="lang-controls">
+                    <label for="languageHint">Language Hint:</label>
+                    <select id="languageHint" class="select-input">
+                        <option value="">Auto-Detect</option>
+                        <option value="tl">Tagalog / Taglish</option>
+                        <option value="bcl">Bicolano (Central Bikol / Rinconada / Albay)</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+
+                <div class="form-controls">
+                    <label for="formTypeSelect">Clinical Form Template:</label>
+                    <select id="formTypeSelect" class="select-input">
+                        <option value="soap_note" selected>Structured SOAP Note (Default)</option>
+                        <option value="dental_exam">Dental Examination Record</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Live Status & Visual Feedback -->
+            <div class="status-panel" id="statusPanel">
+                <div class="status-indicator-box">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span class="status-text" id="statusText">System Ready</span>
+                </div>
+                <div class="timer" id="recordingTimer" style="display: none;">00:00</div>
+            </div>
+
+            <!-- Audio Player Preview -->
+            <div class="audio-preview-row" id="audioPreviewContainer" style="display: none;">
+                <label>Recorded Audio Review:</label>
+                <audio id="audioPlayback" controls></audio>
+            </div>
+
+            <!-- Error Notification Alert Box -->
+            <div class="alert-box alert-error" id="errorBox" style="display: none;" role="alert">
+                <span class="alert-icon">❌</span>
+                <div class="alert-content">
+                    <strong id="errorCategory">Error</strong>
+                    <p id="errorMessage"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Clinical Output Section -->
+        <section class="results-grid" id="resultsSection" style="display: none;">
+            <!-- Column 1: Consultation Transcripts -->
+            <div class="card transcript-card">
+                <div class="card-header">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.1rem; color: #6366f1;">🎙️</span>
+                        <h3 style="margin: 0;">Recorded Conversation</h3>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="card-meta" id="transcriptMeta">Detected: --</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Audio Recording Info Pill -->
+                    <div id="audioInfoPill" style="display: none; background: #0f172a; color: #f8fafc; border-radius: 8px; padding: 0.6rem 0.85rem; margin-bottom: 0.85rem; justify-content: space-between; align-items: center; font-size: 0.82rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
+                            <span id="audioPillTitle" style="font-weight: 500;">Audio Recording</span>
+                        </div>
+                        <span id="audioPillDialect" style="color: #94a3b8; font-family: var(--font-mono); font-size: 0.75rem;">Tagalog / Taglish</span>
+                    </div>
+
+                    <!-- Speaker Attributed Dialogue Bubbles Container -->
+                    <div id="transcriptBubbleContainer" class="transcript-chat-container"></div>
+
+                    <!-- Original Spoken Text (Clean & Compact) -->
+                    <div id="rawVerbatimWrapper" style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed #cbd5e1;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                            <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted, #64748b);">Original Spoken Text</span>
+                        </div>
+                        <div class="transcript-display" id="transcriptText" tabindex="0" style="max-height: 120px; overflow-y: auto; font-size: 0.88rem;"></div>
+                    </div>
+
+                    <!-- Hidden container preserved for script compatibility -->
+                    <div id="cleanedHeading" style="display: none;"></div>
+                    <div id="cleanedTranscriptText" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Column 2: Schema-Driven Dynamic Form Panel -->
+            <div class="card soap-card">
+                <div class="card-header">
+                    <div>
+                        <h3 id="formTitleHeader" style="margin: 0;">Clinical Consultation Note</h3>
+                        <span id="formSubtitleHeader" style="font-size: 0.78rem; color: #64748b;">Review and edit doctor's findings</span>
+                    </div>
+                    <div class="header-actions">
+                        <span class="badge badge-warning" id="reviewBadge">Review Required</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Validation Warnings Banner -->
+                    <div id="warningsContainer" class="warnings-list" style="display: none;">
+                        <strong>Clinical Warnings &amp; Ambiguities:</strong>
+                        <ul id="warningsList"></ul>
+                    </div>
+
+                    <!-- Dynamic Schema-Driven Form Container -->
+                    <form id="dynamicFormContainer" class="dynamic-form-container" onsubmit="return false;">
+                        <div class="empty-state" style="padding: 2.5rem; text-align: center; color: var(--text-muted);">
+                            Record or upload consultation audio to view and edit the clinical note.
+                        </div>
+                    </form>
+
+                    <!-- Hidden container preserved for script compatibility -->
+                    <div style="display: none;">
+                        <pre id="soapJsonDisplay"></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>&copy; 2026 AuraScribe AI MVP. Confidential and for clinical pair-review prototyping only.</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/recorder.js') }}"></script>
+</body>
+</html>
+

@@ -5,11 +5,6 @@
 > [!IMPORTANT]
 > **Mandatory Physician Review Required:** AuraScribe is an assistive clinical documentation tool, **not** an autonomous diagnostic or prescriptive system. Every generated transcript and structured note requires formal review, verification, and sign-off by a licensed physician prior to any clinical or medical record use.
 
-> 📖 **Executive, Technical & Ownership Documentation:**  
-> - **[Project Structure & Architecture Guide (Ownership Reference)](docs/PROJECT_STRUCTURE.md)**  
-> - **[Executive Summary (What, Why, Who, How)](docs/EXECUTIVE_SUMMARY.md)**  
-> - **[Technical Product Roadmap (Phases 1–5)](docs/ROADMAP.md)**  
-
 ---
 
 ## Architecture and End-to-End Pipeline

@@ -56,3 +56,7 @@ htmlcov/
 *.ogg
 /tmp/
 
+# Documentation (local only)
+docs/
+
+
